@@ -33,7 +33,8 @@ window.MEMORIAL = {
     time: "",
     venue: "Calvary Chapel International Worship Center",
     address: "8064 New Cut Road, Severn, MD 21144, USA",
-    mapUrl: "https://www.google.com/maps/search/?api=1&query=8064+New+Cut+Road+Severn+MD+21144",
+    // "Get directions" opens the visitor's maps app with directions to this address.
+    directionsTo: "Calvary Chapel International Worship Center, 8064 New Cut Road, Severn, MD 21144, USA",
     livestreamUrl: "" // e.g. a YouTube or Facebook Live link
   },
 

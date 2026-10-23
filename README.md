@@ -33,3 +33,4 @@ The site uses JavaScript modules, so open it through a local server, not by doub
 
 ## Putting it online
 Drag this folder onto https://app.netlify.com/drop, or use Firebase Hosting.
+

@@ -66,15 +66,27 @@
   }
 
   /* ---------- Home ---------- */
+  // Directions link that opens the phone's default maps app:
+  // Apple Maps on iPhone/iPad, Google Maps on Android and computers.
+  function directionsUrl(destination) {
+    const dest = encodeURIComponent(destination);
+    const ua = navigator.userAgent || "";
+    const isApple = /iPhone|iPad|iPod/i.test(ua) || (/Macintosh/i.test(ua) && navigator.maxTouchPoints > 1);
+    return isApple
+      ? `https://maps.apple.com/?daddr=${dest}&dirflg=d`
+      : `https://www.google.com/maps/dir/?api=1&destination=${dest}&travelmode=driving`;
+  }
+
   function renderService() {
     const s = M.service;
+    const mapHref = s.directionsTo ? directionsUrl(s.directionsTo) : s.mapUrl;
     const shareText = `In loving memory of ${M.person.fullName} (${M.person.yearRange}). Order of service, hymns and tributes: ${location.href.split("#")[0]}`;
     const row = (ic, title, sub) => el("div", { class: "service-row" },
       el("span", { class: "ico", html: icon(ic) }),
       el("div", {}, el("strong", { text: title }), sub ? el("span", { text: sub }) : null));
 
     const actions = el("div", { class: "service-actions" },
-      s.mapUrl ? el("a", { class: "btn btn-primary", href: s.mapUrl, target: "_blank", rel: "noopener", html: icon("pin") + "<span>Get directions</span>" }) : null,
+      mapHref ? el("a", { class: "btn btn-primary", href: mapHref, target: "_blank", rel: "noopener", html: icon("pin") + "<span>Get directions</span>" }) : null,
       s.livestreamUrl ? el("a", { class: "btn btn-soft", href: s.livestreamUrl, target: "_blank", rel: "noopener", html: icon("live") + "<span>Watch live</span>" }) : null,
       el("a", { class: "btn btn-ghost", href: `https://wa.me/?text=${encodeURIComponent(shareText)}`, target: "_blank", rel: "noopener", html: icon("whatsapp") + "<span>Share on WhatsApp</span>" })
     );
