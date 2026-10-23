@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Family Admin · Tributes</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Mulish:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    body { background: var(--blush-50); }
+    .admin { max-width: 760px; margin: 0 auto; padding: 32px 16px 64px; }
+    .admin h1 { font-family: var(--serif); color: var(--plum-700); font-size: 2.4rem; }
+    .card { background: var(--white); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow-sm); margin-top: 18px; }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; justify-content: space-between; }
+    .notice { background: var(--rose-100); color: var(--plum-700); padding: 12px 16px; border-radius: 12px; font-weight: 700; }
+    .del { background: #B3123E; color: #fff; min-height: 44px; }
+    .del:hover { background: #8E0E31; }
+    .tribute { margin-top: 12px; }
+    .tribute-actions { margin-top: 12px; display: flex; justify-content: flex-end; }
+  </style>
+</head>
+<body>
+  <main class="admin">
+    <p class="kicker">Family only</p>
+    <h1>Manage Tributes</h1>
+    <p>Remove any tribute that is spam or not suitable. Removed tributes disappear for everyone straight away.</p>
+
+    <div id="modeNotice" class="notice" hidden></div>
+
+    <form class="card" id="loginForm" hidden>
+      <label class="field"><span class="field-label">Email</span><input name="email" type="email" autocomplete="username" required></label>
+      <label class="field"><span class="field-label">Password</span><input name="password" type="password" autocomplete="current-password" required></label>
+      <p class="form-error" id="loginError" hidden></p>
+      <button class="btn btn-primary btn-block" type="submit">Sign in</button>
+    </form>
+
+    <div id="panel" hidden>
+      <div class="card row">
+        <strong id="who"></strong>
+        <button class="btn btn-ghost" id="signOut" type="button">Sign out</button>
+      </div>
+      <h2 class="section-title">Tributes <span class="count" id="count"></span></h2>
+      <div id="list"></div>
+    </div>
+
+    <p style="margin-top:32px"><a href="index.html">← Back to the memorial site</a></p>
+  </main>
+
+  <script src="js/firebase-config.js"></script>
+  <script type="module">
+    import { getStore, formatDate } from "./js/tributes-store.js";
+    const $ = s => document.querySelector(s);
+
+    function render(store, items) {
+      const list = $("#list");
+      list.replaceChildren();
+      $("#count").textContent = `(${items.length})`;
+      if (!items.length) { list.textContent = "No tributes yet."; return; }
+      for (const t of items) {
+        const card = document.createElement("article");
+        card.className = "tribute";
+        const name = document.createElement("div"); name.className = "tribute-name"; name.textContent = t.name;
+        const meta = document.createElement("div"); meta.className = "tribute-meta"; meta.textContent = [t.relation, formatDate(t.createdAt)].filter(Boolean).join(" · ");
+        const msg = document.createElement("p"); msg.className = "tribute-text"; msg.textContent = t.message;
+        const actions = document.createElement("div"); actions.className = "tribute-actions";
+        const del = document.createElement("button"); del.className = "btn del"; del.type = "button"; del.textContent = "Remove tribute";
+        del.addEventListener("click", async () => {
+          if (!confirm(`Remove the tribute from ${t.name}? This cannot be undone.`)) return;
+          del.disabled = true;
+          try { await store.remove(t.id); }
+          catch (e) { alert("Could not remove it. Make sure you are signed in with the family admin account."); del.disabled = false; }
+        });
+        actions.append(del);
+        card.append(name, meta, msg, actions);
+        list.append(card);
+      }
+    }
+
+    const store = await getStore();
+
+    if (store.mode === "local") {
+      $("#modeNotice").hidden = false;
+      $("#modeNotice").textContent = "Demo mode: Firebase is not connected yet, so this only shows tributes saved on this device.";
+      $("#panel").hidden = false;
+      $("#who").textContent = "Demo mode";
+      $("#signOut").hidden = true;
+      store.subscribe(items => render(store, items));
+    } else {
+      const a = await store.auth();
+      let unsub = null;
+      a.onAuthStateChanged(a.instance, user => {
+        $("#loginForm").hidden = !!user;
+        $("#panel").hidden = !user;
+        if (unsub) { unsub(); unsub = null; }
+        if (user) {
+          $("#who").textContent = `Signed in as ${user.email}`;
+          unsub = store.subscribe(items => render(store, items));
+        }
+      });
+      $("#loginForm").addEventListener("submit", async e => {
+        e.preventDefault();
+        const f = e.target.elements;
+        $("#loginError").hidden = true;
+        try { await a.signInWithEmailAndPassword(a.instance, f.email.value.trim(), f.password.value); }
+        catch (err) { $("#loginError").textContent = "Sign-in failed. Check the email and password."; $("#loginError").hidden = false; }
+      });
+      $("#signOut").addEventListener("click", () => a.signOut(a.instance));
+    }
+  </script>
+</body>
+</html>
