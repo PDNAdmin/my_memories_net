@@ -26,4 +26,4 @@ window.FIREBASE_CONFIG = {
 */
 
 // One Firebase project can hold many memorial sites. Use a unique id per person.
-window.MEMORIAL_ID = "niala-virginia-murphy";
+window.MEMORIAL_ID = "wesley-olajide-ojo-aiyegboka";
